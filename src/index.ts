@@ -1,0 +1,385 @@
+console.log("Skeleton Key extension activated");
+
+import {
+  initialize,
+  type ActivationContext,
+  MidiClip,
+  type NoteDescription,
+  type ApiVersion,
+} from "@ableton-extensions/sdk";
+
+// Import the HTML and CSS template assets (inlined by esbuild text loader)
+import htmlTemplate from "./ui/index.html";
+import cssStyles from "./ui/styles.css";
+
+// Using standard SDK property setter directly
+
+// Colors in 24-bit decimal format
+const COLORS = {
+  RED: 16711680,    // 0xFF0000
+  ORANGE: 16738304, // 0xFF6600
+  BLUE: 255,        // 0x0000FF
+  YELLOW: 16776960  // 0xFFFF00
+};
+
+// Valid SDK context menu scopes (from official docs)
+const VALID_SCOPES = [
+  "MidiClip",
+  "AudioClip",
+  "MidiTrack",
+  "AudioTrack",
+  "ClipSlot",
+  "Scene",
+  "MidiTrack.ArrangementSelection",
+  "AudioTrack.ArrangementSelection",
+  "ClipSlotSelection",
+] as const;
+
+export async function activate(activation: ActivationContext) {
+  console.log("Skeleton Key: activate() called");
+
+  const context = initialize(activation, "1.0.0");
+
+  console.log("Skeleton Key: context initialized");
+
+  // Register the command that opens the UI dialog
+  context.commands.registerCommand("skeleton-key.open", () =>
+    (async () => {
+      console.log("Skeleton Key: command triggered, opening dialog");
+      try {
+        // Inline CSS into the HTML template
+        const formattedHtml = htmlTemplate.replace(
+          "</head>",
+          `<style>${cssStyles}</style></head>`
+        );
+
+        // Encode HTML as a data URL
+        const dialogUrl = `data:text/html,${encodeURIComponent(formattedHtml)}`;
+
+        // Show the modal dialog and wait for user action
+        const resultStr = await context.ui.showModalDialog(dialogUrl, 380, 560);
+        if (!resultStr) return;
+
+        const result = JSON.parse(resultStr);
+        if (result && result.action === "inject" && result.genre) {
+          const customBpm = result.bpm ? Number(result.bpm) : undefined;
+          await injectBlueprint(context, result.genre, customBpm);
+        }
+      } catch (err) {
+        console.error("[Skeleton Key] Dialog failed:", err);
+      }
+    })()
+  );
+
+  // Register context menu action on all valid object scopes and await Live's confirmation
+  for (const scope of VALID_SCOPES) {
+    try {
+      const unregister = await context.ui.registerContextMenuAction(
+        scope,
+        "Skeleton Key...",
+        "skeleton-key.open"
+      );
+      console.log(`Skeleton Key: CONFIRMED context menu on ${scope}`, typeof unregister);
+    } catch (err) {
+      console.error(`Skeleton Key: FAILED context menu on ${scope}:`, err);
+    }
+  }
+
+  console.log("Skeleton Key: fully activated, all context menus confirmed by Live");
+}
+
+// Note names for logging
+const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+// Transpose a note array by semitones (drums notes at pitch < 40 are kit pieces — skip)
+function transposeNotes(notes: NoteDescription[], semitones: number): NoteDescription[] {
+  if (semitones === 0) return notes;
+  return notes.map(n => ({
+    ...n,
+    pitch: n.pitch < 40 ? n.pitch : Math.max(0, Math.min(127, n.pitch + semitones))
+  }));
+}
+
+// Primary DAW timeline injector function
+async function injectBlueprint(context: ReturnType<typeof initialize>, genre: string, customBpm?: number) {
+  console.log(`[Skeleton Key] Injecting blueprint for genre: ${genre}`);
+  const song = context.application.song;
+
+  // Read project key/scale — rootNote is 0=C … 11=B
+  const projectRoot = song.rootNote ?? 0;
+  const scaleEnabled = song.scaleMode ?? false;
+  console.log(`[Skeleton Key] Project key: ${NOTE_NAMES[projectRoot]}, Scale Mode: ${scaleEnabled}`);
+
+  // Default root notes per genre (used as blueprint base)
+  const genreRoots: Record<string, number> = {
+    house:       9,  // A
+    dubstep:     5,  // F
+    hiphop_trap: 3,  // D#/Eb
+    dnb:         5,  // F
+  };
+  const blueprintRoot = genreRoots[genre] ?? 0;
+  const transpose = scaleEnabled ? ((projectRoot - blueprintRoot + 12) % 12) : 0;
+  if (transpose !== 0) {
+    console.log(`[Skeleton Key] Transposing +${transpose} semitones to match project key ${NOTE_NAMES[projectRoot]}`);
+  }
+
+  // Set tempo — use custom BPM from dialog if provided, else genre default
+  const defaultBpms: Record<string, number> = {
+    house: 126, dubstep: 140, hiphop_trap: 145, dnb: 172
+  };
+  song.tempo = customBpm ?? defaultBpms[genre] ?? 126;
+
+  // 1. Map the Arrangement Locators (Cue Points)
+  // Intro (Bar 1 / beat 0), Build (Bar 17 / beat 64), Drop (Bar 33 / beat 128),
+  // Break (Bar 49 / beat 192), Outro (Bar 65 / beat 256)
+  const locators = [
+    { beat: 0,   name: "Intro" },
+    { beat: 64,  name: "Build" },
+    { beat: 128, name: "Drop" },
+    { beat: 192, name: "Break" },
+    { beat: 256, name: "Outro" }
+  ];
+
+  for (const loc of locators) {
+    try {
+      const cp = await song.createCuePoint(loc.beat);
+      cp.name = loc.name;
+    } catch (e) {
+      console.warn(`[Skeleton Key] Failed to create locator at beat ${loc.beat}:`, e);
+    }
+  }
+
+  // 2. Generate the 4 MIDI Tracks inside a single undoable transaction
+  const tracks = await context.withinTransaction(() =>
+    Promise.all([
+      song.createMidiTrack(),
+      song.createMidiTrack(),
+      song.createMidiTrack(),
+      song.createMidiTrack()
+    ])
+  );
+
+  const [drumsTrack, bassTrack, melodyTrack, fxTrack] = tracks;
+
+  drumsTrack.name  = "SKELETON · Drums";
+  bassTrack.name   = "MUSCLE · Bass";
+  melodyTrack.name = "MELODY · Chords";
+  fxTrack.name     = "SKIN · FX";
+
+  // 3. Build all note patterns — full (16 bars), intro/outro (16 bars stripped), break (16 bars minimal)
+  type NoteSet = { drums: NoteDescription[], bass: NoteDescription[], melody: NoteDescription[], fx: NoteDescription[] };
+  const BARS = 16; // each section is 16 bars / 64 beats
+
+  const full:   NoteSet = { drums: [], bass: [], melody: [], fx: [] };
+  const intro:  NoteSet = { drums: [], bass: [], melody: [], fx: [] };
+  const brk:    NoteSet = { drums: [], bass: [], melody: [], fx: [] };
+
+  switch (genre) {
+
+    // ─────────────────────────────────── HOUSE ───────────────────────────────
+    case "house": {
+      // FULL — 4-on-floor kick, off-beat bass, Am7 chord stabs
+      for (let i = 0; i < BARS * 4; i++) {
+        const v = i % 4 === 0 ? 115 : i % 4 === 2 ? 110 : i % 4 === 1 ? 102 : 95;
+        full.drums.push({ pitch: 36, startTime: i,       duration: 0.25, velocity: v });
+        full.bass.push ({ pitch: 33, startTime: i + 0.5, duration: 0.4,  velocity: 100 });
+      }
+      const am7 = [57, 60, 64, 67];
+      for (let bar = 0; bar < BARS; bar++) {
+        for (const up of [1.5, 3.5]) for (const p of am7)
+          full.melody.push({ pitch: p, startTime: bar * 4 + up, duration: 0.4, velocity: 90 });
+      }
+      for (const p of [45, 52, 57, 64])
+        full.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 52 });
+
+      // INTRO — kick only, long sparse root bass, no melody, open pad
+      for (let i = 0; i < BARS * 4; i++) {
+        const v = i % 4 === 0 ? 110 : i % 4 === 2 ? 90 : 0;
+        if (v) intro.drums.push({ pitch: 36, startTime: i, duration: 0.25, velocity: v });
+      }
+      for (let bar = 0; bar < BARS; bar += 4)
+        intro.bass.push({ pitch: 33, startTime: bar * 4, duration: 14, velocity: 80 });
+      for (const p of [45, 57])
+        intro.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 45 });
+
+      // BREAK — snare on 3, bass every 2 bars, sparse chord hits, lush pad
+      for (let bar = 0; bar < BARS; bar++) {
+        brk.drums.push({ pitch: 38, startTime: bar * 4 + 2, duration: 0.25, velocity: 105 });
+        if (bar % 2 === 0)
+          brk.drums.push({ pitch: 38, startTime: bar * 4 + 3.5, duration: 0.25, velocity: 80 });
+      }
+      for (let bar = 0; bar < BARS; bar += 2)
+        brk.bass.push({ pitch: 33, startTime: bar * 4, duration: 7.5, velocity: 85 });
+      for (let bar = 0; bar < BARS; bar += 4) {
+        for (const p of am7)
+          brk.melody.push({ pitch: p, startTime: bar * 4 + 1.5, duration: 1.5, velocity: 72 });
+      }
+      for (const p of [45, 52, 57, 64])
+        brk.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 55 });
+      break;
+    }
+
+    // ─────────────────────────────────── DUBSTEP ─────────────────────────────
+    case "dubstep": {
+      // FULL — half-time kick/snare, sustained bass drops, sparse stabs
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        full.drums.push({ pitch: 36, startTime: bs,       duration: 0.25, velocity: 110 });
+        full.drums.push({ pitch: 38, startTime: bs + 2,   duration: 0.25, velocity: 120 });
+        if (bar % 2 === 1)
+          full.drums.push({ pitch: 36, startTime: bs + 1.5, duration: 0.25, velocity: 100 });
+      }
+      for (let bar = 0; bar < BARS; bar += 2)
+        full.bass.push({ pitch: 29, startTime: bar * 4, duration: 6.0, velocity: 105 });
+      const fm = [53, 56, 60];
+      for (let bar = 0; bar < BARS; bar++) {
+        if (bar % 2 === 0) for (const p of fm)
+          full.melody.push({ pitch: p, startTime: bar * 4 + 2.5, duration: 0.5, velocity: 85 });
+      }
+      for (const p of [41, 53, 56, 60])
+        full.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 48 });
+
+      // INTRO — kick on 1 only, held bass, no melody, dark pad
+      for (let bar = 0; bar < BARS; bar++)
+        intro.drums.push({ pitch: 36, startTime: bar * 4, duration: 0.25, velocity: 100 });
+      for (let bar = 0; bar < BARS; bar += 4)
+        intro.bass.push({ pitch: 29, startTime: bar * 4, duration: 14, velocity: 85 });
+      for (const p of [41, 53])
+        intro.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 42 });
+
+      // BREAK — snare only (no kick), very sparse bass, single chord hit per 4 bars, dark pad
+      for (let bar = 0; bar < BARS; bar++)
+        brk.drums.push({ pitch: 38, startTime: bar * 4 + 2, duration: 0.25, velocity: 110 });
+      for (let bar = 0; bar < BARS; bar += 4)
+        brk.bass.push({ pitch: 29, startTime: bar * 4, duration: 14, velocity: 80 });
+      for (let bar = 0; bar < BARS; bar += 4) for (const p of fm)
+        brk.melody.push({ pitch: p, startTime: bar * 4 + 2.5, duration: 2.0, velocity: 68 });
+      for (const p of [41, 53, 56, 60])
+        brk.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 52 });
+      break;
+    }
+
+    // ─────────────────────────────────── HIP-HOP / TRAP ──────────────────────
+    case "hiphop_trap": {
+      // FULL — sparse 808 kick cadence, sub-bass mirrors, descending chords
+      const prog = [
+        [51, 58, 63], [49, 56, 61], [47, 54, 59], [46, 53, 58]
+      ]; // D#m, C#m, Bm, A#m
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        full.drums.push({ pitch: 36, startTime: bs,       duration: 0.25, velocity: 115 });
+        full.drums.push({ pitch: 36, startTime: bs + 1.5, duration: 0.25, velocity: 110 });
+        full.drums.push({ pitch: 38, startTime: bs + 2,   duration: 0.25, velocity: 115 });
+        if (bar % 2 === 1) {
+          full.drums.push({ pitch: 36, startTime: bs + 3.25, duration: 0.125, velocity: 90 });
+          full.drums.push({ pitch: 36, startTime: bs + 3.5,  duration: 0.125, velocity: 100 });
+        }
+        full.bass.push({ pitch: 27, startTime: bs,       duration: 1.25, velocity: 100 });
+        full.bass.push({ pitch: 27, startTime: bs + 1.5, duration: 1.25, velocity: 100 });
+        if (bar % 2 === 1)
+          full.bass.push({ pitch: 27, startTime: bs + 3.5, duration: 0.4, velocity: 90 });
+        for (const p of prog[bar % 4])
+          full.melody.push({ pitch: p, startTime: bar * 4, duration: 3.5, velocity: 85 });
+      }
+      for (const p of [39, 51, 54, 58])
+        full.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 48 });
+
+      // INTRO — kick on 1 only, long 808 sub, no chords, dark sub pad
+      for (let bar = 0; bar < BARS; bar++)
+        intro.drums.push({ pitch: 36, startTime: bar * 4, duration: 0.25, velocity: 108 });
+      for (let bar = 0; bar < BARS; bar += 4)
+        intro.bass.push({ pitch: 27, startTime: bar * 4, duration: 14, velocity: 90 });
+      for (const p of [39, 51])
+        intro.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 44 });
+
+      // BREAK — snare on 3 only, bass held, one chord per 4 bars, atmospheric pad
+      for (let bar = 0; bar < BARS; bar++)
+        brk.drums.push({ pitch: 38, startTime: bar * 4 + 2, duration: 0.25, velocity: 108 });
+      for (let bar = 0; bar < BARS; bar += 4)
+        brk.bass.push({ pitch: 27, startTime: bar * 4, duration: 14, velocity: 78 });
+      for (let bar = 0; bar < BARS; bar += 4) for (const p of prog[bar % 4])
+        brk.melody.push({ pitch: p, startTime: bar * 4, duration: 7.5, velocity: 65 });
+      for (const p of [39, 51, 54, 58])
+        brk.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 52 });
+      break;
+    }
+
+    // ─────────────────────────────────── DRUM AND BASS ───────────────────────
+    case "dnb": {
+      // FULL — Amen break, Reece bass, Fm9 chords
+      const fm9 = [53, 56, 60, 63, 67];
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        full.drums.push({ pitch: 36, startTime: bs,       duration: 0.2, velocity: 110 });
+        full.drums.push({ pitch: 36, startTime: bs + 1.5, duration: 0.2, velocity: 105 });
+        full.drums.push({ pitch: 38, startTime: bs + 1,   duration: 0.2, velocity: 115 });
+        full.drums.push({ pitch: 38, startTime: bs + 3,   duration: 0.2, velocity: 115 });
+        if (bar % 2 === 1)
+          full.drums.push({ pitch: 36, startTime: bs + 2.5, duration: 0.2, velocity: 100 });
+      }
+      for (let bar = 0; bar < BARS; bar += 2)
+        full.bass.push({ pitch: 29, startTime: bar * 4, duration: 7.8, velocity: 100 });
+      for (let bar = 0; bar < BARS; bar += 2) for (const p of fm9)
+        full.melody.push({ pitch: p, startTime: bar * 4, duration: 7.8, velocity: 85 });
+      for (const p of [41, 53, 60, 67])
+        full.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 50 });
+
+      // INTRO — kick + snare minimal (just 1 and 3), bass long, no melody, deep pad
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        intro.drums.push({ pitch: 36, startTime: bs,     duration: 0.2, velocity: 105 });
+        intro.drums.push({ pitch: 38, startTime: bs + 2, duration: 0.2, velocity: 108 });
+      }
+      for (let bar = 0; bar < BARS; bar += 4)
+        intro.bass.push({ pitch: 29, startTime: bar * 4, duration: 14, velocity: 88 });
+      for (const p of [41, 53])
+        intro.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 44 });
+
+      // BREAK — snare only, very sparse bass, long chords, full pad
+      for (let bar = 0; bar < BARS; bar++) {
+        brk.drums.push({ pitch: 38, startTime: bar * 4 + 1, duration: 0.2, velocity: 112 });
+        brk.drums.push({ pitch: 38, startTime: bar * 4 + 3, duration: 0.2, velocity: 105 });
+      }
+      for (let bar = 0; bar < BARS; bar += 4)
+        brk.bass.push({ pitch: 29, startTime: bar * 4, duration: 14, velocity: 82 });
+      for (let bar = 0; bar < BARS; bar += 4) for (const p of fm9)
+        brk.melody.push({ pitch: p, startTime: bar * 4, duration: 14, velocity: 70 });
+      for (const p of [41, 53, 60, 67])
+        brk.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 54 });
+      break;
+    }
+  }
+
+  // Outro mirrors the intro
+  const outro = intro;
+
+  // 4. Create all 5 sections × 4 tracks = 20 clips (each section = 16 bars = 64 beats)
+  const SECTION_LEN = BARS * 4; // 64 beats
+
+  async function makeSection(label: string, startBeat: number, notes: NoteSet) {
+    const [dc, bc, mc, fc] = await Promise.all([
+      drumsTrack.createMidiClip(startBeat, SECTION_LEN),
+      bassTrack.createMidiClip(startBeat, SECTION_LEN),
+      melodyTrack.createMidiClip(startBeat, SECTION_LEN),
+      fxTrack.createMidiClip(startBeat, SECTION_LEN),
+    ]);
+    dc.color = COLORS.RED;    dc.name = `Skeleton · ${label}`;
+    bc.color = COLORS.ORANGE; bc.name = `Muscle · ${label}`;
+    mc.color = COLORS.BLUE;   mc.name = `Melody · ${label}`;
+    fc.color = COLORS.YELLOW; fc.name = `Skin · ${label}`;
+
+    dc.notes = notes.drums;
+    bc.notes = transposeNotes(notes.bass,   transpose);
+    mc.notes = transposeNotes(notes.melody, transpose);
+    fc.notes = transposeNotes(notes.fx,     transpose);
+  }
+
+  // 5. Inject all sections
+  await makeSection("Intro",  0,   intro);
+  await makeSection("Build",  64,  full);
+  await makeSection("Drop",   128, full);
+  await makeSection("Break",  192, brk);
+  await makeSection("Outro",  256, outro);
+
+  console.log("[Skeleton Key] Blueprint injection complete.");
+}

@@ -1,0 +1,389 @@
+:root {
+  --bg-main:     #000000;
+  --bg-card:     #050505;
+  --bg-input:    #020202;
+  --bg-box:      #000000;
+  --accent:      #00ff41;
+  --accent-dim:  #00bb30;
+  --accent-glow: rgba(0, 255, 65, 0.22);
+  --text-hi:     #ccffdd;
+  --text-mid:    #3a9947;
+  --text-dim:    #133318;
+  --border:      #071009;
+  --border-lit:  #0d2211;
+  --drums:       #ff3333;
+  --bass:        #ff7722;
+  --melody:      #3377ff;
+  --fx:          #ccbb00;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-main);
+  color: var(--text-hi);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Panel ──────────────────────────────────────────────── */
+
+.panel-container {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-lit);
+  border-radius: 4px;
+  padding: 20px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 0 30px rgba(0,255,65,0.06), inset 0 1px 0 rgba(0,255,65,0.06);
+}
+
+/* subtle corner-tick CRT feel */
+.panel-container::before,
+.panel-container::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--accent-dim);
+  border-style: solid;
+}
+.panel-container::before { top: -1px; left: -1px;  border-width: 2px 0 0 2px; }
+.panel-container::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+/* ── X Close Button ─────────────────────────────────────── */
+
+.close-x {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-family: monospace;
+  transition: color 0.15s;
+  z-index: 10;
+}
+.close-x:hover { color: var(--accent); }
+
+/* ── Skull / Key Icon ───────────────────────────────────── */
+
+.key-icon {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  color: var(--accent);
+  filter:
+    drop-shadow(0 0 3px #00ff41)
+    drop-shadow(0 0 8px rgba(0,255,65,0.6))
+    drop-shadow(0 0 18px rgba(0,255,65,0.25));
+  margin-bottom: -4px;
+}
+/* CRT scanline overlay on the skull */
+.key-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 1px,
+    rgba(0,0,0,0.28) 1px, rgba(0,0,0,0.28) 2px
+  );
+  pointer-events: none;
+}
+
+.key-icon svg {
+  width: 64px;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+
+.header-section {
+  text-align: center;
+  border-bottom: 1px solid var(--border-lit);
+  padding-bottom: 10px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 5px;
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent-glow);
+  text-transform: uppercase;
+}
+
+.tagline {
+  margin-top: 3px;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  color: var(--text-mid);
+  text-transform: uppercase;
+}
+
+/* ── Genre Selector ─────────────────────────────────────── */
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+
+.form-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: var(--text-mid);
+  text-transform: uppercase;
+}
+
+.select-wrapper { position: relative; }
+
+select {
+  width: 100%;
+  background: var(--bg-input);
+  color: var(--accent);
+  border: 1px solid var(--border-lit);
+  border-radius: 2px;
+  padding: 9px 28px 9px 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  letter-spacing: 1px;
+}
+select:focus {
+  border-color: var(--accent-dim);
+  box-shadow: 0 0 6px rgba(0,255,65,0.18);
+}
+
+.select-arrow {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent-dim);
+  pointer-events: none;
+  font-size: 10px;
+}
+
+/* ── Blueprint Box ──────────────────────────────────────── */
+
+.blueprint-box {
+  background: var(--bg-box);
+  border: 1px solid var(--border-lit);
+  border-radius: 2px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.blueprint-stats { display: flex; align-items: center; gap: 10px; }
+
+.stat { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+
+.stat-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 6px var(--accent-glow);
+}
+
+.stat-divider { width: 1px; height: 26px; background: var(--border-lit); flex-shrink: 0; }
+
+.preview-feel {
+  font-size: 9px;
+  color: var(--text-mid);
+  letter-spacing: 0.5px;
+  border-top: 1px solid var(--border);
+  padding-top: 7px;
+  font-style: italic;
+}
+
+/* ── Track Layers ───────────────────────────────────────── */
+
+.layers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--border);
+  padding-top: 7px;
+}
+
+.layer { display: flex; align-items: center; gap: 7px; }
+
+.layer-dot { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; }
+.layer-dot.drums  { background: var(--drums);  box-shadow: 0 0 4px var(--drums); }
+.layer-dot.bass   { background: var(--bass);   box-shadow: 0 0 4px var(--bass); }
+.layer-dot.melody { background: var(--melody); box-shadow: 0 0 4px var(--melody); }
+.layer-dot.fx     { background: var(--fx);     box-shadow: 0 0 4px var(--fx); }
+
+.layer-name {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-mid);
+  min-width: 52px;
+  text-transform: uppercase;
+}
+
+.layer-desc { font-size: 10px; color: var(--text-hi); opacity: 0.6; }
+
+/* ── Section Markers ────────────────────────────────────── */
+
+.sections {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border-top: 1px solid var(--border);
+  padding-top: 7px;
+  flex-wrap: wrap;
+}
+
+.section-tag {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-lit);
+  border-radius: 1px;
+  padding: 2px 4px;
+  text-transform: uppercase;
+}
+
+.section-arrow { font-size: 9px; color: var(--text-dim); line-height: 1; }
+
+/* ── BPM Input ──────────────────────────────────────────── */
+
+.bpm-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.bpm-input {
+  width: 52px;
+  background: var(--bg-input);
+  color: var(--accent);
+  border: 1px solid var(--border-lit);
+  border-radius: 2px;
+  padding: 2px 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-align: right;
+  outline: none;
+  -moz-appearance: textfield;
+}
+.bpm-input::-webkit-outer-spin-button,
+.bpm-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.bpm-input:focus {
+  border-color: var(--accent-dim);
+  box-shadow: 0 0 6px rgba(0,255,65,0.18);
+}
+
+.bpm-unit {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-mid);
+  letter-spacing: 1px;
+}
+
+/* ── Build Button ───────────────────────────────────────── */
+
+.inject-button {
+  width: 100%;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
+  border-radius: 2px;
+  padding: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+}
+.inject-button:hover {
+  background: var(--accent);
+  color: #000;
+  box-shadow: 0 0 14px var(--accent-glow), 0 0 28px rgba(0,255,65,0.1);
+}
+.inject-button:active { opacity: 0.85; }
+
+/* ── Cancel (text link) ─────────────────────────────────── */
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  text-align: center;
+  padding: 2px;
+  transition: color 0.15s;
+}
+.close-btn:hover { color: var(--text-mid); }
+
+/* ── Footer ─────────────────────────────────────────────── */
+
+.footer-brand {
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--border-lit);
+  padding-top: 10px;
+}
+
+.rooks-logo {
+  width: 80px;
+  height: auto;
+  /* invert white bg → black, black letters → white, then tint neon green */
+  filter: invert(1) sepia(1) saturate(4) hue-rotate(90deg) brightness(0.8);
+  opacity: 0.55;
+  transition: opacity 0.2s, filter 0.2s;
+}
+.rooks-logo:hover {
+  opacity: 0.9;
+  filter: invert(1) sepia(1) saturate(6) hue-rotate(90deg) brightness(1);
+}
+
+.footer-text {
+  text-align: center;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 5px;
+}

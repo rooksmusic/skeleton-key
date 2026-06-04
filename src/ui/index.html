@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skeleton Key</title>
+  <script>
+    function doSendMessage(msg) {
+      if (window.webkit?.messageHandlers?.live) window.webkit.messageHandlers.live.postMessage(msg);
+      else if (window.chrome?.webview) window.chrome.webview.postMessage(msg);
+    }
+    function closeWithResult(result) {
+      doSendMessage({ method: "close_and_send", params: [JSON.stringify(result)] });
+    }
+    function injectFoundation() {
+      const bpm = parseInt(document.getElementById("bpm-input").value, 10) || BLUEPRINTS[document.getElementById("genre-select").value].bpm;
+      closeWithResult({ action: "inject", genre: document.getElementById("genre-select").value, bpm });
+    }
+    function cancelDialog() {
+      closeWithResult({ action: "cancel" });
+    }
+
+    const BLUEPRINTS = {
+      house:       { bpm: 126, key: "A Minor",  feel: "Four-to-the-floor groove" },
+      dubstep:     { bpm: 140, key: "F Minor",  feel: "Half-time heavy weight"   },
+      hiphop_trap: { bpm: 145, key: "D\u266f Minor", feel: "Sparse 808 cadence"      },
+      dnb:         { bpm: 172, key: "F Minor",  feel: "Amen-driven momentum"     },
+    };
+
+    function updatePreview() {
+      const bp = BLUEPRINTS[document.getElementById("genre-select").value];
+      document.getElementById("bpm-input").value          = bp.bpm;
+      document.getElementById("preview-key").textContent  = bp.key;
+      document.getElementById("preview-feel").textContent = bp.feel;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updatePreview();
+      document.getElementById("genre-select").addEventListener("change", updatePreview);
+      document.getElementById("genre-select").focus();
+      document.addEventListener("keydown", e => {
+        if (e.key === "Enter")  injectFoundation();
+        if (e.key === "Escape") cancelDialog();
+      });
+    });
+  </script>
+</head>
+<body>
+  <div class="panel-container">
+
+    <!-- X close button -->
+    <button class="close-x" onclick="cancelDialog()" title="Close">&times;</button>
+
+    <!-- Digital Skull + Key Icon -->
+    <div class="key-icon" aria-hidden="true">
+      <svg viewBox="0 0 72 148" xmlns="http://www.w3.org/2000/svg">
+
+        <!-- ======= PIXEL SKULL ======= -->
+        <!-- Row 0: cols 2-9 -->
+        <rect x="12" y="0"  width="5" height="5" fill="currentColor"/>
+        <rect x="18" y="0"  width="5" height="5" fill="currentColor"/>
+        <rect x="24" y="0"  width="5" height="5" fill="currentColor"/>
+        <rect x="30" y="0"  width="5" height="5" fill="currentColor"/>
+        <rect x="36" y="0"  width="5" height="5" fill="currentColor"/>
+        <rect x="42" y="0"  width="5" height="5" fill="currentColor"/>
+        <rect x="48" y="0"  width="5" height="5" fill="currentColor"/>
+        <rect x="54" y="0"  width="5" height="5" fill="currentColor"/>
+        <!-- Row 1: cols 1-10 -->
+        <rect x="6"  y="6"  width="5" height="5" fill="currentColor"/>
+        <rect x="12" y="6"  width="5" height="5" fill="currentColor"/>
+        <rect x="18" y="6"  width="5" height="5" fill="currentColor"/>
+        <rect x="24" y="6"  width="5" height="5" fill="currentColor"/>
+        <rect x="30" y="6"  width="5" height="5" fill="currentColor"/>
+        <rect x="36" y="6"  width="5" height="5" fill="currentColor"/>
+        <rect x="42" y="6"  width="5" height="5" fill="currentColor"/>
+        <rect x="48" y="6"  width="5" height="5" fill="currentColor"/>
+        <rect x="54" y="6"  width="5" height="5" fill="currentColor"/>
+        <rect x="60" y="6"  width="5" height="5" fill="currentColor"/>
+        <!-- Row 2: cols 0-11 (full width) -->
+        <rect x="0"  y="12" width="5" height="5" fill="currentColor"/>
+        <rect x="6"  y="12" width="5" height="5" fill="currentColor"/>
+        <rect x="12" y="12" width="5" height="5" fill="currentColor"/>
+        <rect x="18" y="12" width="5" height="5" fill="currentColor"/>
+        <rect x="24" y="12" width="5" height="5" fill="currentColor"/>
+        <rect x="30" y="12" width="5" height="5" fill="currentColor"/>
+        <rect x="36" y="12" width="5" height="5" fill="currentColor"/>
+        <rect x="42" y="12" width="5" height="5" fill="currentColor"/>
+        <rect x="48" y="12" width="5" height="5" fill="currentColor"/>
+        <rect x="54" y="12" width="5" height="5" fill="currentColor"/>
+        <rect x="60" y="12" width="5" height="5" fill="currentColor"/>
+        <rect x="66" y="12" width="5" height="5" fill="currentColor"/>
+        <!-- Row 3: cols 0-11, minus 2,3,8,9 = angry brow cutout -->
+        <rect x="0"  y="18" width="5" height="5" fill="currentColor"/>
+        <rect x="6"  y="18" width="5" height="5" fill="currentColor"/>
+        <rect x="24" y="18" width="5" height="5" fill="currentColor"/>
+        <rect x="30" y="18" width="5" height="5" fill="currentColor"/>
+        <rect x="36" y="18" width="5" height="5" fill="currentColor"/>
+        <rect x="42" y="18" width="5" height="5" fill="currentColor"/>
+        <rect x="60" y="18" width="5" height="5" fill="currentColor"/>
+        <rect x="66" y="18" width="5" height="5" fill="currentColor"/>
+        <!-- Row 4: eye sockets — cols 0,4,5,6,7,11 -->
+        <rect x="0"  y="24" width="5" height="5" fill="currentColor"/>
+        <rect x="24" y="24" width="5" height="5" fill="currentColor"/>
+        <rect x="30" y="24" width="5" height="5" fill="currentColor"/>
+        <rect x="36" y="24" width="5" height="5" fill="currentColor"/>
+        <rect x="42" y="24" width="5" height="5" fill="currentColor"/>
+        <rect x="66" y="24" width="5" height="5" fill="currentColor"/>
+        <!-- Row 5: eyes deeper — cols 0, 5, 11 -->
+        <rect x="0"  y="30" width="5" height="5" fill="currentColor"/>
+        <rect x="30" y="30" width="5" height="5" fill="currentColor"/>
+        <rect x="66" y="30" width="5" height="5" fill="currentColor"/>
+        <!-- Row 6: nose cavity — cols 0-3 and 8-11 -->
+        <rect x="0"  y="36" width="5" height="5" fill="currentColor"/>
+        <rect x="6"  y="36" width="5" height="5" fill="currentColor"/>
+        <rect x="12" y="36" width="5" height="5" fill="currentColor"/>
+        <rect x="18" y="36" width="5" height="5" fill="currentColor"/>
+        <rect x="48" y="36" width="5" height="5" fill="currentColor"/>
+        <rect x="54" y="36" width="5" height="5" fill="currentColor"/>
+        <rect x="60" y="36" width="5" height="5" fill="currentColor"/>
+        <rect x="66" y="36" width="5" height="5" fill="currentColor"/>
+        <!-- Row 7: full jaw top -->
+        <rect x="0"  y="42" width="5" height="5" fill="currentColor"/>
+        <rect x="6"  y="42" width="5" height="5" fill="currentColor"/>
+        <rect x="12" y="42" width="5" height="5" fill="currentColor"/>
+        <rect x="18" y="42" width="5" height="5" fill="currentColor"/>
+        <rect x="24" y="42" width="5" height="5" fill="currentColor"/>
+        <rect x="30" y="42" width="5" height="5" fill="currentColor"/>
+        <rect x="36" y="42" width="5" height="5" fill="currentColor"/>
+        <rect x="42" y="42" width="5" height="5" fill="currentColor"/>
+        <rect x="48" y="42" width="5" height="5" fill="currentColor"/>
+        <rect x="54" y="42" width="5" height="5" fill="currentColor"/>
+        <rect x="60" y="42" width="5" height="5" fill="currentColor"/>
+        <rect x="66" y="42" width="5" height="5" fill="currentColor"/>
+        <!-- Row 8: jaw — cols 1-10 -->
+        <rect x="6"  y="48" width="5" height="5" fill="currentColor"/>
+        <rect x="12" y="48" width="5" height="5" fill="currentColor"/>
+        <rect x="18" y="48" width="5" height="5" fill="currentColor"/>
+        <rect x="24" y="48" width="5" height="5" fill="currentColor"/>
+        <rect x="30" y="48" width="5" height="5" fill="currentColor"/>
+        <rect x="36" y="48" width="5" height="5" fill="currentColor"/>
+        <rect x="42" y="48" width="5" height="5" fill="currentColor"/>
+        <rect x="48" y="48" width="5" height="5" fill="currentColor"/>
+        <rect x="54" y="48" width="5" height="5" fill="currentColor"/>
+        <rect x="60" y="48" width="5" height="5" fill="currentColor"/>
+        <!-- Row 9: teeth — cols 1,3,5,6,8,10 -->
+        <rect x="6"  y="54" width="5" height="5" fill="currentColor"/>
+        <rect x="18" y="54" width="5" height="5" fill="currentColor"/>
+        <rect x="30" y="54" width="5" height="5" fill="currentColor"/>
+        <rect x="36" y="54" width="5" height="5" fill="currentColor"/>
+        <rect x="48" y="54" width="5" height="5" fill="currentColor"/>
+        <rect x="60" y="54" width="5" height="5" fill="currentColor"/>
+        <!-- Row 10: teeth bottom — cols 1,3,5,6,8,10 -->
+        <rect x="6"  y="60" width="5" height="5" fill="currentColor"/>
+        <rect x="18" y="60" width="5" height="5" fill="currentColor"/>
+        <rect x="30" y="60" width="5" height="5" fill="currentColor"/>
+        <rect x="36" y="60" width="5" height="5" fill="currentColor"/>
+        <rect x="48" y="60" width="5" height="5" fill="currentColor"/>
+        <rect x="60" y="60" width="5" height="5" fill="currentColor"/>
+
+        <!-- Glitch stray pixels — digital noise -->
+        <rect x="66" y="3"  width="3" height="3" fill="currentColor" opacity="0.5"/>
+        <rect x="0"  y="57" width="3" height="3" fill="currentColor" opacity="0.4"/>
+        <rect x="69" y="48" width="2" height="2" fill="currentColor" opacity="0.35"/>
+
+        <!-- ======= KEY ======= -->
+
+        <!-- Guard — full width bar -->
+        <rect x="4"  y="70" width="64" height="5" fill="currentColor"/>
+        <!-- Guard detail notches (cut into guard for ornate look) -->
+        <rect x="10" y="70" width="4"  height="3" fill="var(--bg-card)"/>
+        <rect x="58" y="70" width="4"  height="3" fill="var(--bg-card)"/>
+
+        <!-- Shaft -->
+        <rect x="31" y="75" width="10" height="65" fill="currentColor"/>
+
+        <!-- Right-side bit — 5 teeth, uneven lengths -->
+        <rect x="41" y="83"  width="21" height="6" fill="currentColor"/>
+        <rect x="41" y="95"  width="14" height="5" fill="currentColor"/>
+        <rect x="41" y="106" width="22" height="6" fill="currentColor"/>
+        <rect x="41" y="118" width="16" height="5" fill="currentColor"/>
+        <rect x="41" y="129" width="9"  height="5" fill="currentColor"/>
+
+        <!-- Left notch (opposite side detail) -->
+        <rect x="19" y="100" width="12" height="5" fill="currentColor"/>
+
+      </svg>
+    </div>
+
+    <!-- Header -->
+    <div class="header-section">
+      <h1 class="title">SKELETON KEY</h1>
+      <p class="tagline">&gt; UNLOCK YOUR PRODUCTION_</p>
+    </div>
+
+    <!-- Blueprint selector -->
+    <div class="form-group">
+      <label class="form-label" for="genre-select">&gt; SELECT BLUEPRINT</label>
+      <div class="select-wrapper">
+        <select id="genre-select">
+          <option value="house">House</option>
+          <option value="dubstep">Dubstep</option>
+          <option value="hiphop_trap">Hip-Hop / Trap</option>
+          <option value="dnb">Drum &amp; Bass</option>
+        </select>
+        <span class="select-arrow" aria-hidden="true">&#9660;</span>
+      </div>
+    </div>
+
+    <!-- Blueprint preview -->
+    <div class="blueprint-box">
+      <div class="blueprint-stats">
+        <div class="stat">
+          <span class="stat-label">TEMPO</span>
+          <div class="bpm-wrap">
+            <input type="number" id="bpm-input" class="bpm-input" min="60" max="220" value="126" />
+            <span class="bpm-unit">BPM</span>
+          </div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-label">ROOT KEY</span>
+          <span class="stat-value" id="preview-key">A Minor</span>
+        </div>
+      </div>
+      <p class="preview-feel" id="preview-feel">Four-to-the-floor groove</p>
+
+      <div class="layers">
+        <div class="layer"><span class="layer-dot drums"></span><span class="layer-name">SKELETON</span><span class="layer-desc">Drums</span></div>
+        <div class="layer"><span class="layer-dot bass"></span><span class="layer-name">MUSCLE</span><span class="layer-desc">Bass</span></div>
+        <div class="layer"><span class="layer-dot melody"></span><span class="layer-name">MELODY</span><span class="layer-desc">Chords</span></div>
+        <div class="layer"><span class="layer-dot fx"></span><span class="layer-name">SKIN</span><span class="layer-desc">FX</span></div>
+      </div>
+
+      <div class="sections">
+        <span class="section-tag">INTRO</span>
+        <span class="section-arrow">&#10095;</span>
+        <span class="section-tag">BUILD</span>
+        <span class="section-arrow">&#10095;</span>
+        <span class="section-tag">DROP</span>
+        <span class="section-arrow">&#10095;</span>
+        <span class="section-tag">BREAK</span>
+        <span class="section-arrow">&#10095;</span>
+        <span class="section-tag">OUTRO</span>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <button class="inject-button" onclick="injectFoundation()">&gt; BUILD THE SKELETON</button>
+    <button class="close-btn" onclick="cancelDialog()">cancel</button>
+
+    <!-- Rooks logo footer -->
+    <div class="footer-brand">
+      <img src="data:image/jpeg;base64,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" class="rooks-logo" alt="Rooks Music"/>
+    </div>
+
+  </div>
+</body>
+</html>
