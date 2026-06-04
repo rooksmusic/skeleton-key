@@ -21,10 +21,14 @@
     }
 
     const BLUEPRINTS = {
-      house:       { bpm: 126, key: "A Minor",  feel: "Four-to-the-floor groove" },
-      dubstep:     { bpm: 140, key: "F Minor",  feel: "Half-time heavy weight"   },
-      hiphop_trap: { bpm: 145, key: "D\u266f Minor", feel: "Sparse 808 cadence"      },
-      dnb:         { bpm: 172, key: "F Minor",  feel: "Amen-driven momentum"     },
+      house:       { bpm: 126, key: "A Minor",  feel: "Four-to-the-floor groove"  },
+      dubstep:     { bpm: 140, key: "F Minor",  feel: "Half-time heavy weight"    },
+      hiphop_trap: { bpm: 145, key: "D\u266f Minor", feel: "Sparse 808 cadence"  },
+      dnb:         { bpm: 172, key: "F Minor",  feel: "Amen-driven momentum"      },
+      techno:      { bpm: 133, key: "F Minor",  feel: "Hypnotic 4/4 industrial"   },
+      afrobeats:   { bpm: 106, key: "G Minor",  feel: "Syncopated Afro groove"    },
+      reggaeton:   { bpm:  97, key: "D Minor",  feel: "Dembow kick-snare pattern" },
+      uk_garage:   { bpm: 130, key: "A Minor",  feel: "2-step swing rhythm"       },
     };
 
     function updatePreview() {
@@ -201,6 +205,10 @@
           <option value="dubstep">Dubstep</option>
           <option value="hiphop_trap">Hip-Hop / Trap</option>
           <option value="dnb">Drum &amp; Bass</option>
+          <option value="techno">Techno</option>
+          <option value="afrobeats">Afrobeats</option>
+          <option value="reggaeton">Reggaeton</option>
+          <option value="uk_garage">UK Garage</option>
         </select>
         <span class="select-arrow" aria-hidden="true">&#9660;</span>
       </div>

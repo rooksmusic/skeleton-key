@@ -57,7 +57,7 @@ export async function activate(activation: ActivationContext) {
         const dialogUrl = `data:text/html,${encodeURIComponent(formattedHtml)}`;
 
         // Show the modal dialog and wait for user action
-        const resultStr = await context.ui.showModalDialog(dialogUrl, 380, 560);
+        const resultStr = await context.ui.showModalDialog(dialogUrl, 390, 580);
         if (!resultStr) return;
 
         const result = JSON.parse(resultStr);
@@ -116,6 +116,10 @@ async function injectBlueprint(context: ReturnType<typeof initialize>, genre: st
     dubstep:     5,  // F
     hiphop_trap: 3,  // D#/Eb
     dnb:         5,  // F
+    techno:      5,  // F
+    afrobeats:   7,  // G
+    reggaeton:   2,  // D
+    uk_garage:   9,  // A
   };
   const blueprintRoot = genreRoots[genre] ?? 0;
   const transpose = scaleEnabled ? ((projectRoot - blueprintRoot + 12) % 12) : 0;
@@ -125,7 +129,8 @@ async function injectBlueprint(context: ReturnType<typeof initialize>, genre: st
 
   // Set tempo — use custom BPM from dialog if provided, else genre default
   const defaultBpms: Record<string, number> = {
-    house: 126, dubstep: 140, hiphop_trap: 145, dnb: 172
+    house: 126, dubstep: 140, hiphop_trap: 145, dnb: 172,
+    techno: 133, afrobeats: 106, reggaeton: 97, uk_garage: 130,
   };
   song.tempo = customBpm ?? defaultBpms[genre] ?? 126;
 
@@ -346,6 +351,217 @@ async function injectBlueprint(context: ReturnType<typeof initialize>, genre: st
         brk.melody.push({ pitch: p, startTime: bar * 4, duration: 14, velocity: 70 });
       for (const p of [41, 53, 60, 67])
         brk.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 54 });
+      break;
+    }
+
+    // ─────────────────────────────────── TECHNO ──────────────────────────────
+    case "techno": {
+      // FULL — relentless 4/4 kick, offbeat hi-hat, open hi-hat on 2&4, pulsing bass, minimal stab
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        for (let b = 0; b < 4; b++)
+          full.drums.push({ pitch: 36, startTime: bs + b, duration: 0.2, velocity: b === 0 ? 118 : b === 2 ? 112 : 105 });
+        for (let b = 0; b < 4; b++)
+          full.drums.push({ pitch: 42, startTime: bs + b + 0.5, duration: 0.1, velocity: 78 });
+        full.drums.push({ pitch: 46, startTime: bs + 1, duration: 0.4, velocity: 88 });
+        full.drums.push({ pitch: 46, startTime: bs + 3, duration: 0.4, velocity: 85 });
+      }
+      for (let i = 0; i < BARS * 4; i++) {
+        const isDown = i % 4 === 0;
+        full.bass.push({ pitch: 29, startTime: i,       duration: 0.35, velocity: isDown ? 108 : 85 });
+        full.bass.push({ pitch: 29, startTime: i + 0.5, duration: 0.35, velocity: 75 });
+      }
+      const fmT = [53, 56, 60];
+      for (let bar = 0; bar < BARS; bar += 4) for (const p of fmT)
+        full.melody.push({ pitch: p, startTime: bar * 4 + 2.5, duration: 0.3, velocity: 80 });
+      for (const p of [29, 41, 53, 56])
+        full.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 46 });
+
+      // INTRO — kick every beat, no hi-hat, long sparse bass, no melody
+      for (let bar = 0; bar < BARS; bar++)
+        for (let b = 0; b < 4; b++)
+          intro.drums.push({ pitch: 36, startTime: bar * 4 + b, duration: 0.2, velocity: 108 });
+      for (let bar = 0; bar < BARS; bar += 4)
+        intro.bass.push({ pitch: 29, startTime: bar * 4, duration: 14, velocity: 85 });
+      for (const p of [29, 41])
+        intro.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 40 });
+
+      // BREAK — hi-hat only, sparse bass, long chord holds, atmospheric pad
+      for (let bar = 0; bar < BARS; bar++)
+        for (let b = 0; b < 4; b++) {
+          brk.drums.push({ pitch: 42, startTime: bar * 4 + b,       duration: 0.1, velocity: 80 });
+          brk.drums.push({ pitch: 42, startTime: bar * 4 + b + 0.5, duration: 0.1, velocity: 65 });
+        }
+      for (let bar = 0; bar < BARS; bar += 4)
+        brk.bass.push({ pitch: 29, startTime: bar * 4, duration: 14, velocity: 78 });
+      for (let bar = 0; bar < BARS; bar += 4) for (const p of fmT)
+        brk.melody.push({ pitch: p, startTime: bar * 4 + 2.5, duration: 12, velocity: 65 });
+      for (const p of [29, 41, 53, 56])
+        brk.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 52 });
+      break;
+    }
+
+    // ─────────────────────────────────── AFROBEATS ───────────────────────────
+    case "afrobeats": {
+      // FULL — syncopated kick/snare, melodic bass G1/Bb1/F1, bright Gm→F stabs
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        full.drums.push({ pitch: 36, startTime: bs,       duration: 0.25, velocity: 115 });
+        full.drums.push({ pitch: 36, startTime: bs + 2.5, duration: 0.25, velocity: 108 });
+        full.drums.push({ pitch: 38, startTime: bs + 1,   duration: 0.25, velocity: 112 });
+        full.drums.push({ pitch: 38, startTime: bs + 3,   duration: 0.25, velocity: 110 });
+        if (bar % 2 === 0)
+          full.drums.push({ pitch: 36, startTime: bs + 3.75, duration: 0.15, velocity: 90 });
+      }
+      const afroBass: [number, number][] = [[31,34],[34,31],[29,31],[31,29]];
+      for (let bar = 0; bar < BARS; bar++) {
+        const [p1, p2] = afroBass[bar % 4]; const bs = bar * 4;
+        full.bass.push({ pitch: p1, startTime: bs,       duration: 0.8,  velocity: 102 });
+        full.bass.push({ pitch: p1, startTime: bs + 1.5, duration: 0.5,  velocity: 90  });
+        full.bass.push({ pitch: p2, startTime: bs + 2,   duration: 0.8,  velocity: 98  });
+        full.bass.push({ pitch: p2, startTime: bs + 3.5, duration: 0.35, velocity: 85  });
+      }
+      const gmC = [55,58,62], fC = [53,57,60];
+      for (let bar = 0; bar < BARS; bar++) {
+        const chord = bar % 2 === 0 ? gmC : fC; const bs = bar * 4;
+        for (const p of chord) {
+          full.melody.push({ pitch: p, startTime: bs + 0.5, duration: 0.4, velocity: 88 });
+          full.melody.push({ pitch: p, startTime: bs + 2.5, duration: 0.4, velocity: 84 });
+        }
+      }
+      for (const p of [43, 55, 58, 62])
+        full.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 50 });
+
+      // INTRO — kick on 1 only, root G1 bass every 2 bars, warm pad
+      for (let bar = 0; bar < BARS; bar++)
+        intro.drums.push({ pitch: 36, startTime: bar * 4, duration: 0.25, velocity: 108 });
+      for (let bar = 0; bar < BARS; bar += 2)
+        intro.bass.push({ pitch: 31, startTime: bar * 4, duration: 7.5, velocity: 88 });
+      for (const p of [43, 55])
+        intro.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 44 });
+
+      // BREAK — snare on 2&4, bass every 2 bars, long chord holds, lush pad
+      for (let bar = 0; bar < BARS; bar++) {
+        brk.drums.push({ pitch: 38, startTime: bar * 4 + 1, duration: 0.25, velocity: 108 });
+        brk.drums.push({ pitch: 38, startTime: bar * 4 + 3, duration: 0.25, velocity: 105 });
+      }
+      for (let bar = 0; bar < BARS; bar += 2)
+        brk.bass.push({ pitch: 31, startTime: bar * 4, duration: 7.5, velocity: 80 });
+      for (let bar = 0; bar < BARS; bar += 4) for (const p of gmC)
+        brk.melody.push({ pitch: p, startTime: bar * 4 + 0.5, duration: 7.0, velocity: 70 });
+      for (const p of [43, 55, 58, 62])
+        brk.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 54 });
+      break;
+    }
+
+    // ─────────────────────────────────── REGGAETON ───────────────────────────
+    case "reggaeton": {
+      // FULL — dembow: kick on 1 and "and of 2" (1.5), snare on 3
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        full.drums.push({ pitch: 36, startTime: bs,       duration: 0.25, velocity: 118 });
+        full.drums.push({ pitch: 36, startTime: bs + 1.5, duration: 0.25, velocity: 110 });
+        full.drums.push({ pitch: 38, startTime: bs + 2,   duration: 0.25, velocity: 115 });
+        if (bar % 2 === 1)
+          full.drums.push({ pitch: 36, startTime: bs + 3.75, duration: 0.15, velocity: 90 });
+      }
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        full.bass.push({ pitch: 38, startTime: bs,       duration: 1.2, velocity: 108 });
+        full.bass.push({ pitch: 38, startTime: bs + 1.5, duration: 1.0, velocity: 100 });
+        if (bar % 2 === 1)
+          full.bass.push({ pitch: 36, startTime: bs + 2.5, duration: 1.2, velocity: 95 });
+      }
+      const regProg = [[50,53,57],[48,52,55],[46,50,53],[45,49,52]];
+      for (let bar = 0; bar < BARS; bar++) {
+        const chord = regProg[bar % 4]; const bs = bar * 4;
+        for (const p of chord) {
+          full.melody.push({ pitch: p, startTime: bs + 0.5, duration: 0.4, velocity: 88 });
+          full.melody.push({ pitch: p, startTime: bs + 2.5, duration: 0.4, velocity: 84 });
+        }
+      }
+      for (const p of [38, 50, 53, 57])
+        full.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 48 });
+
+      // INTRO — kick on 1 only, long 808 bass, no melody, dark sub pad
+      for (let bar = 0; bar < BARS; bar++)
+        intro.drums.push({ pitch: 36, startTime: bar * 4, duration: 0.25, velocity: 110 });
+      for (let bar = 0; bar < BARS; bar += 4)
+        intro.bass.push({ pitch: 38, startTime: bar * 4, duration: 14, velocity: 95 });
+      for (const p of [38, 50])
+        intro.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 42 });
+
+      // BREAK — snare on 3 only, bass every 4 bars, long chord holds, atmospheric pad
+      for (let bar = 0; bar < BARS; bar++)
+        brk.drums.push({ pitch: 38, startTime: bar * 4 + 2, duration: 0.25, velocity: 112 });
+      for (let bar = 0; bar < BARS; bar += 4)
+        brk.bass.push({ pitch: 38, startTime: bar * 4, duration: 14, velocity: 82 });
+      for (let bar = 0; bar < BARS; bar += 4) for (const p of regProg[0])
+        brk.melody.push({ pitch: p, startTime: bar * 4, duration: 13.5, velocity: 68 });
+      for (const p of [38, 50, 53, 57])
+        brk.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 52 });
+      break;
+    }
+
+    // ─────────────────────────────────── UK GARAGE ───────────────────────────
+    case "uk_garage": {
+      // FULL — 2-step: kick on 1 and "and of 3" (2.5), snare on 2 and 4
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        full.drums.push({ pitch: 36, startTime: bs,       duration: 0.2, velocity: 115 });
+        full.drums.push({ pitch: 36, startTime: bs + 2.5, duration: 0.2, velocity: 108 });
+        full.drums.push({ pitch: 38, startTime: bs + 1,   duration: 0.2, velocity: 112 });
+        full.drums.push({ pitch: 38, startTime: bs + 3,   duration: 0.2, velocity: 110 });
+        if (bar % 2 === 1) {
+          full.drums.push({ pitch: 36, startTime: bs + 0.75, duration: 0.15, velocity: 88 });
+          full.drums.push({ pitch: 42, startTime: bs + 1.5,  duration: 0.1,  velocity: 72 });
+        }
+      }
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        full.bass.push({ pitch: 33, startTime: bs,        duration: 0.7,  velocity: 105 });
+        full.bass.push({ pitch: 33, startTime: bs + 0.75, duration: 0.3,  velocity: 85  });
+        full.bass.push({ pitch: 40, startTime: bs + 1.5,  duration: 0.7,  velocity: 98  });
+        full.bass.push({ pitch: 33, startTime: bs + 2.5,  duration: 0.7,  velocity: 102 });
+        full.bass.push({ pitch: 40, startTime: bs + 3.5,  duration: 0.45, velocity: 90  });
+      }
+      const am7Ug = [57, 60, 64, 67];
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        for (const p of am7Ug) {
+          full.melody.push({ pitch: p, startTime: bs + 0.5, duration: 0.35, velocity: 90 });
+          full.melody.push({ pitch: p, startTime: bs + 2.5, duration: 0.35, velocity: 86 });
+        }
+        if (bar % 2 === 1) for (const p of am7Ug)
+          full.melody.push({ pitch: p, startTime: bar * 4 + 3.5, duration: 0.25, velocity: 78 });
+      }
+      for (const p of [33, 45, 57, 64])
+        full.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 50 });
+
+      // INTRO — straight kick 1&3, snare 2&4, sparse bass, Am pad
+      for (let bar = 0; bar < BARS; bar++) {
+        const bs = bar * 4;
+        intro.drums.push({ pitch: 36, startTime: bs,     duration: 0.2, velocity: 108 });
+        intro.drums.push({ pitch: 36, startTime: bs + 2, duration: 0.2, velocity: 105 });
+        intro.drums.push({ pitch: 38, startTime: bs + 1, duration: 0.2, velocity: 110 });
+        intro.drums.push({ pitch: 38, startTime: bs + 3, duration: 0.2, velocity: 108 });
+      }
+      for (let bar = 0; bar < BARS; bar += 2)
+        intro.bass.push({ pitch: 33, startTime: bar * 4, duration: 7.5, velocity: 90 });
+      for (const p of [33, 45])
+        intro.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 44 });
+
+      // BREAK — snare on 2&4, bass every 2 bars, sparse Am stabs, warm pad
+      for (let bar = 0; bar < BARS; bar++) {
+        brk.drums.push({ pitch: 38, startTime: bar * 4 + 1, duration: 0.2, velocity: 108 });
+        brk.drums.push({ pitch: 38, startTime: bar * 4 + 3, duration: 0.2, velocity: 105 });
+      }
+      for (let bar = 0; bar < BARS; bar += 2)
+        brk.bass.push({ pitch: 33, startTime: bar * 4, duration: 7.5, velocity: 82 });
+      for (let bar = 0; bar < BARS; bar += 4) for (const p of am7Ug)
+        brk.melody.push({ pitch: p, startTime: bar * 4 + 0.5, duration: 7.0, velocity: 70 });
+      for (const p of [33, 45, 57, 64])
+        brk.fx.push({ pitch: p, startTime: 0, duration: BARS * 4 - 0.5, velocity: 52 });
       break;
     }
   }
