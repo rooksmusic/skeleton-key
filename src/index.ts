@@ -138,11 +138,12 @@ async function injectBlueprint(context: ReturnType<typeof initialize>, genre: st
   // Intro (Bar 1 / beat 0), Build (Bar 17 / beat 64), Drop (Bar 33 / beat 128),
   // Break (Bar 49 / beat 192), Outro (Bar 65 / beat 256)
   const locators = [
-    { beat: 0,   name: "Intro" },
-    { beat: 64,  name: "Build" },
-    { beat: 128, name: "Drop" },
-    { beat: 192, name: "Break" },
-    { beat: 256, name: "Outro" }
+    { beat: 0,   name: "Intro"   },
+    { beat: 64,  name: "Build"   },
+    { beat: 128, name: "Drop"    },
+    { beat: 192, name: "Break"   },
+    { beat: 256, name: "Drop 2"  },
+    { beat: 320, name: "Outro"   },
   ];
 
   for (const loc of locators) {
@@ -595,7 +596,8 @@ async function injectBlueprint(context: ReturnType<typeof initialize>, genre: st
   await makeSection("Build",  64,  full);
   await makeSection("Drop",   128, full);
   await makeSection("Break",  192, brk);
-  await makeSection("Outro",  256, outro);
+  await makeSection("Drop 2", 256, full);
+  await makeSection("Outro",  320, outro);
 
   console.log("[Skeleton Key] Blueprint injection complete.");
 }
