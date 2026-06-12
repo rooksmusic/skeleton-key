@@ -1,7 +1,7 @@
 {
   "name": "Skeleton Key",
   "author": "Rooks Music",
-  "entry": "dist/index.js",
-  "version": "1.2.1",
+  "entry": "index.js",
+  "version": "1.2.2",
   "minimumApiVersion": "1.0.0"
 }

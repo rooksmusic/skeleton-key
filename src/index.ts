@@ -35,7 +35,7 @@ const VALID_SCOPES = [
   "ClipSlotSelection",
 ] as const;
 
-export async function activate(activation: ActivationContext) {
+export function activate(activation: ActivationContext) {
   console.log("Skeleton Key: activate() called");
 
   const context = initialize(activation, "1.0.0");
@@ -71,21 +71,19 @@ export async function activate(activation: ActivationContext) {
     })()
   );
 
-  // Register context menu action on all valid object scopes and await Live's confirmation
+  // Register context menu action on all valid object scopes.
+  // Must be called synchronously during activate — the SDK host does not await
+  // the activate return value, so async/await here causes registrations to be lost.
   for (const scope of VALID_SCOPES) {
-    try {
-      const unregister = await context.ui.registerContextMenuAction(
-        scope,
-        "Skeleton Key...",
-        "skeleton-key.open"
-      );
-      console.log(`Skeleton Key: CONFIRMED context menu on ${scope}`, typeof unregister);
-    } catch (err) {
-      console.error(`Skeleton Key: FAILED context menu on ${scope}:`, err);
-    }
+    context.ui.registerContextMenuAction(
+      scope,
+      "Skeleton Key...",
+      "skeleton-key.open"
+    );
+    console.log(`Skeleton Key: registered context menu on ${scope}`);
   }
 
-  console.log("Skeleton Key: fully activated, all context menus confirmed by Live");
+  console.log("Skeleton Key: fully activated");
 }
 
 // Note names for logging
