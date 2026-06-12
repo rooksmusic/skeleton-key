@@ -11,10 +11,10 @@
   --text-dim:    #133318;
   --border:      #071009;
   --border-lit:  #0d2211;
-  --drums:       #ff3333;
-  --bass:        #ff7722;
-  --melody:      #3377ff;
-  --fx:          #ccbb00;
+  --drums:       #FF7A3D;
+  --bass:        #FFB03B;
+  --melody:      #00D9FF;
+  --effects:     #A85FFF;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,7 +23,7 @@ body {
   background: var(--bg-main);
   color: var(--text-hi);
   font-family: 'Courier New', Courier, monospace;
-  font-size: 12px;
+  font-size: 14px;
   height: 100vh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
@@ -44,6 +44,8 @@ body {
   gap: 8px;
   box-sizing: border-box;
   box-shadow: inset 0 1px 0 rgba(0,255,65,0.06);
+  resize: both;
+  overflow: auto;
 }
 
 /* subtle corner-tick CRT feel */
@@ -119,7 +121,7 @@ body {
 }
 
 .title {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: 5px;
   color: var(--accent);
@@ -129,7 +131,7 @@ body {
 
 .tagline {
   margin-top: 3px;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 400;
   letter-spacing: 3px;
   color: var(--text-mid);
@@ -141,7 +143,7 @@ body {
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 
 .form-label {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 2.5px;
   color: var(--text-mid);
@@ -158,7 +160,7 @@ select {
   border-radius: 2px;
   padding: 9px 28px 9px 10px;
   font-family: 'Courier New', monospace;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   appearance: none;
   cursor: pointer;
@@ -201,7 +203,7 @@ select:focus {
 .stat { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 
 .stat-label {
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--text-dim);
@@ -209,7 +211,7 @@ select:focus {
 }
 
 .stat-value {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--accent);
   letter-spacing: 0.5px;
@@ -219,7 +221,7 @@ select:focus {
 .stat-divider { width: 1px; height: 26px; background: var(--border-lit); flex-shrink: 0; }
 
 .preview-feel {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--text-mid);
   letter-spacing: 0.5px;
   border-top: 1px solid var(--border);
@@ -237,24 +239,32 @@ select:focus {
   padding-top: 7px;
 }
 
-.layer { display: flex; align-items: center; gap: 7px; }
+.layer { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+
+input[type="checkbox"] {
+  accent-color: var(--accent);
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
 
 .layer-dot { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; }
-.layer-dot.drums  { background: var(--drums);  box-shadow: 0 0 4px var(--drums); }
-.layer-dot.bass   { background: var(--bass);   box-shadow: 0 0 4px var(--bass); }
-.layer-dot.melody { background: var(--melody); box-shadow: 0 0 4px var(--melody); }
-.layer-dot.fx     { background: var(--fx);     box-shadow: 0 0 4px var(--fx); }
+.layer-dot.drums  { background: var(--drums);   box-shadow: 0 0 4px var(--drums); }
+.layer-dot.bass   { background: var(--bass);    box-shadow: 0 0 4px var(--bass); }
+.layer-dot.melody { background: var(--melody);  box-shadow: 0 0 4px var(--melody); }
+.layer-dot.effects { background: var(--effects); box-shadow: 0 0 4px var(--effects); }
 
 .layer-name {
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 2px;
-  color: var(--text-mid);
+  color: var(--text-hi);
   min-width: 52px;
   text-transform: uppercase;
 }
 
-.layer-desc { font-size: 10px; color: var(--text-hi); opacity: 0.6; }
+.layer-desc { font-size: 12px; color: var(--text-hi); opacity: 0.6; }
 
 /* ── Section Markers ────────────────────────────────────── */
 
@@ -268,7 +278,7 @@ select:focus {
 }
 
 .section-tag {
-  font-size: 7.5px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 1px;
   color: var(--text-dim);
@@ -278,7 +288,7 @@ select:focus {
   text-transform: uppercase;
 }
 
-.section-arrow { font-size: 9px; color: var(--text-dim); line-height: 1; }
+.section-arrow { font-size: 11px; color: var(--text-dim); line-height: 1; }
 
 /* ── BPM Input ──────────────────────────────────────────── */
 
@@ -296,7 +306,7 @@ select:focus {
   border-radius: 2px;
   padding: 2px 4px;
   font-family: 'Courier New', monospace;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-align: right;
@@ -311,7 +321,7 @@ select:focus {
 }
 
 .bpm-unit {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-mid);
   letter-spacing: 1px;
@@ -327,7 +337,7 @@ select:focus {
   border-radius: 2px;
   padding: 10px;
   font-family: 'Courier New', monospace;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 3px;
   text-transform: uppercase;
@@ -349,7 +359,7 @@ select:focus {
   border: none;
   color: var(--text-dim);
   font-family: 'Courier New', monospace;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 1px;
   cursor: pointer;
   text-align: center;
@@ -383,7 +393,7 @@ select:focus {
 
 .footer-text {
   text-align: center;
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 700;
   letter-spacing: 2.5px;
   color: var(--text-dim);

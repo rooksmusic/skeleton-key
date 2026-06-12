@@ -14,7 +14,13 @@
     }
     function injectFoundation() {
       const bpm = parseInt(document.getElementById("bpm-input").value, 10) || BLUEPRINTS[document.getElementById("genre-select").value].bpm;
-      closeWithResult({ action: "inject", genre: document.getElementById("genre-select").value, bpm });
+      const tracks = {
+        drums: document.getElementById("checkbox-drums").checked,
+        bass: document.getElementById("checkbox-bass").checked,
+        melody: document.getElementById("checkbox-melody").checked,
+        effects: document.getElementById("checkbox-effects").checked
+      };
+      closeWithResult({ action: "inject", genre: document.getElementById("genre-select").value, bpm, tracks });
     }
     function cancelDialog() {
       closeWithResult({ action: "cancel" });
@@ -233,10 +239,10 @@
       <p class="preview-feel" id="preview-feel">Four-to-the-floor groove</p>
 
       <div class="layers">
-        <div class="layer"><span class="layer-dot drums"></span><span class="layer-name">SKELETON</span><span class="layer-desc">Drums</span></div>
-        <div class="layer"><span class="layer-dot bass"></span><span class="layer-name">MUSCLE</span><span class="layer-desc">Bass</span></div>
-        <div class="layer"><span class="layer-dot melody"></span><span class="layer-name">MELODY</span><span class="layer-desc">Chords</span></div>
-        <div class="layer"><span class="layer-dot fx"></span><span class="layer-name">SKIN</span><span class="layer-desc">FX</span></div>
+        <label class="layer"><input type="checkbox" id="checkbox-drums" checked /> <span class="layer-dot drums"></span><span class="layer-name">Drums</span></label>
+        <label class="layer"><input type="checkbox" id="checkbox-bass" checked /> <span class="layer-dot bass"></span><span class="layer-name">Bass</span></label>
+        <label class="layer"><input type="checkbox" id="checkbox-melody" checked /> <span class="layer-dot melody"></span><span class="layer-name">Melody</span></label>
+        <label class="layer"><input type="checkbox" id="checkbox-effects" checked /> <span class="layer-dot effects"></span><span class="layer-name">Effects</span></label>
       </div>
 
       <div class="sections">

@@ -16,10 +16,10 @@ import cssStyles from "./ui/styles.css";
 
 // Colors in 24-bit decimal format
 const COLORS = {
-  RED: 16711680,    // 0xFF0000
-  ORANGE: 16738304, // 0xFF6600
-  BLUE: 255,        // 0x0000FF
-  YELLOW: 16776960  // 0xFFFF00
+  DRUMS: 16734525,   // 0xFF7A3D (vibrant orange)
+  BASS: 16754747,    // 0xFFB03B (warm amber)
+  MELODY: 891391,    // 0x00D9FF (bright cyan)
+  EFFECTS: 11030783  // 0xA85FFF (vivid purple)
 };
 
 // Valid SDK context menu scopes (from official docs)
@@ -63,7 +63,8 @@ export function activate(activation: ActivationContext) {
         const result = JSON.parse(resultStr);
         if (result && result.action === "inject" && result.genre) {
           const customBpm = result.bpm ? Number(result.bpm) : undefined;
-          await injectBlueprint(context, result.genre, customBpm);
+          const tracksConfig = result.tracks || { drums: true, bass: true, melody: true, effects: true };
+          await injectBlueprint(context, result.genre, customBpm, tracksConfig);
         }
       } catch (err) {
         console.error("[Skeleton Key] Dialog failed:", err);
@@ -99,7 +100,7 @@ function transposeNotes(notes: NoteDescription[], semitones: number): NoteDescri
 }
 
 // Primary DAW timeline injector function
-async function injectBlueprint(context: ReturnType<typeof initialize>, genre: string, customBpm?: number) {
+async function injectBlueprint(context: ReturnType<typeof initialize>, genre: string, customBpm?: number, tracksConfig?: { drums: boolean, bass: boolean, melody: boolean, effects: boolean }) {
   console.log(`[Skeleton Key] Injecting blueprint for genre: ${genre}`);
   const song = context.application.song;
 
@@ -165,10 +166,10 @@ async function injectBlueprint(context: ReturnType<typeof initialize>, genre: st
 
   const [drumsTrack, bassTrack, melodyTrack, fxTrack] = tracks;
 
-  drumsTrack.name  = "SKELETON · Drums";
-  bassTrack.name   = "MUSCLE · Bass";
-  melodyTrack.name = "MELODY · Chords";
-  fxTrack.name     = "SKIN · FX";
+  drumsTrack.name  = "Drums";
+  bassTrack.name   = "Bass";
+  melodyTrack.name = "Melody";
+  fxTrack.name     = "Effects";
 
   // 3. Build all note patterns — full (16 bars), intro/outro (16 bars stripped), break (16 bars minimal)
   type NoteSet = { drums: NoteDescription[], bass: NoteDescription[], melody: NoteDescription[], fx: NoteDescription[] };
@@ -572,21 +573,34 @@ async function injectBlueprint(context: ReturnType<typeof initialize>, genre: st
   const SECTION_LEN = BARS * 4; // 64 beats
 
   async function makeSection(label: string, startBeat: number, notes: NoteSet) {
-    const [dc, bc, mc, fc] = await Promise.all([
-      drumsTrack.createMidiClip(startBeat, SECTION_LEN),
-      bassTrack.createMidiClip(startBeat, SECTION_LEN),
-      melodyTrack.createMidiClip(startBeat, SECTION_LEN),
-      fxTrack.createMidiClip(startBeat, SECTION_LEN),
-    ]);
-    dc.color = COLORS.RED;    dc.name = `Skeleton · ${label}`;
-    bc.color = COLORS.ORANGE; bc.name = `Muscle · ${label}`;
-    mc.color = COLORS.BLUE;   mc.name = `Melody · ${label}`;
-    fc.color = COLORS.YELLOW; fc.name = `Skin · ${label}`;
+    const enabledTracks = [
+      tracksConfig?.drums !== false ? drumsTrack.createMidiClip(startBeat, SECTION_LEN) : null,
+      tracksConfig?.bass !== false ? bassTrack.createMidiClip(startBeat, SECTION_LEN) : null,
+      tracksConfig?.melody !== false ? melodyTrack.createMidiClip(startBeat, SECTION_LEN) : null,
+      tracksConfig?.effects !== false ? fxTrack.createMidiClip(startBeat, SECTION_LEN) : null,
+    ].filter(x => x !== null);
+    const [dc, bc, mc, fc] = await Promise.all(enabledTracks);
 
-    dc.notes = notes.drums;
-    bc.notes = transposeNotes(notes.bass,   transpose);
-    mc.notes = transposeNotes(notes.melody, transpose);
-    fc.notes = transposeNotes(notes.fx,     transpose);
+    if (dc) {
+      dc.color = COLORS.DRUMS;
+      dc.name = label;
+      dc.notes = notes.drums;
+    }
+    if (bc) {
+      bc.color = COLORS.BASS;
+      bc.name = label;
+      bc.notes = transposeNotes(notes.bass, transpose);
+    }
+    if (mc) {
+      mc.color = COLORS.MELODY;
+      mc.name = label;
+      mc.notes = transposeNotes(notes.melody, transpose);
+    }
+    if (fc) {
+      fc.color = COLORS.EFFECTS;
+      fc.name = label;
+      fc.notes = transposeNotes(notes.fx, transpose);
+    }
   }
 
   // 5. Inject all sections
