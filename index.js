@@ -334,7 +334,7 @@ body {
   right: 10px;
   background: none;
   border: none;
-  color: var(--text-dim);
+  color: var(--text-mid);
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
