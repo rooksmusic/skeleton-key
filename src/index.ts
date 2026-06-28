@@ -63,8 +63,8 @@ export function activate(activation: ActivationContext) {
         const result = JSON.parse(resultStr);
         if (result && result.action === "inject" && result.genre) {
           const customBpm = result.bpm ? Number(result.bpm) : undefined;
-          const tracksConfig = result.tracks || { drums: true, bass: true, melody: true, effects: true };
-          await injectBlueprint(context, result.genre, customBpm, tracksConfig);
+          const midiConfig = result.midi || result.tracks || { drums: true, bass: true, melody: true, effects: true };
+          await injectBlueprint(context, result.genre, customBpm, midiConfig);
         }
       } catch (err) {
         console.error("[Skeleton Key] Dialog failed:", err);
@@ -100,7 +100,9 @@ function transposeNotes(notes: NoteDescription[], semitones: number): NoteDescri
 }
 
 // Primary DAW timeline injector function
-async function injectBlueprint(context: ReturnType<typeof initialize>, genre: string, customBpm?: number, tracksConfig?: { drums: boolean, bass: boolean, melody: boolean, effects: boolean }) {
+type MidiConfig = { drums: boolean; bass: boolean; melody: boolean; effects: boolean };
+
+async function injectBlueprint(context: ReturnType<typeof initialize>, genre: string, customBpm?: number, midiConfig?: MidiConfig) {
   console.log(`[Skeleton Key] Injecting blueprint for genre: ${genre}`);
   const song = context.application.song;
 
@@ -572,35 +574,36 @@ async function injectBlueprint(context: ReturnType<typeof initialize>, genre: st
   // 4. Create all 5 sections × 4 tracks = 20 clips (each section = 16 bars = 64 beats)
   const SECTION_LEN = BARS * 4; // 64 beats
 
-  async function makeSection(label: string, startBeat: number, notes: NoteSet) {
-    const enabledTracks = [
-      tracksConfig?.drums !== false ? drumsTrack.createMidiClip(startBeat, SECTION_LEN) : null,
-      tracksConfig?.bass !== false ? bassTrack.createMidiClip(startBeat, SECTION_LEN) : null,
-      tracksConfig?.melody !== false ? melodyTrack.createMidiClip(startBeat, SECTION_LEN) : null,
-      tracksConfig?.effects !== false ? fxTrack.createMidiClip(startBeat, SECTION_LEN) : null,
-    ].filter(x => x !== null);
-    const [dc, bc, mc, fc] = await Promise.all(enabledTracks);
+  const fillMidi = {
+    drums: midiConfig?.drums !== false,
+    bass: midiConfig?.bass !== false,
+    melody: midiConfig?.melody !== false,
+    effects: midiConfig?.effects !== false,
+  };
 
-    if (dc) {
-      dc.color = COLORS.DRUMS;
-      dc.name = label;
-      dc.notes = notes.drums;
-    }
-    if (bc) {
-      bc.color = COLORS.BASS;
-      bc.name = label;
-      bc.notes = transposeNotes(notes.bass, transpose);
-    }
-    if (mc) {
-      mc.color = COLORS.MELODY;
-      mc.name = label;
-      mc.notes = transposeNotes(notes.melody, transpose);
-    }
-    if (fc) {
-      fc.color = COLORS.EFFECTS;
-      fc.name = label;
-      fc.notes = transposeNotes(notes.fx, transpose);
-    }
+  async function makeSection(label: string, startBeat: number, notes: NoteSet) {
+    const [dc, bc, mc, fc] = await Promise.all([
+      drumsTrack.createMidiClip(startBeat, SECTION_LEN),
+      bassTrack.createMidiClip(startBeat, SECTION_LEN),
+      melodyTrack.createMidiClip(startBeat, SECTION_LEN),
+      fxTrack.createMidiClip(startBeat, SECTION_LEN),
+    ]);
+
+    dc.color = COLORS.DRUMS;
+    dc.name = label;
+    dc.notes = fillMidi.drums ? notes.drums : [];
+
+    bc.color = COLORS.BASS;
+    bc.name = label;
+    bc.notes = fillMidi.bass ? transposeNotes(notes.bass, transpose) : [];
+
+    mc.color = COLORS.MELODY;
+    mc.name = label;
+    mc.notes = fillMidi.melody ? transposeNotes(notes.melody, transpose) : [];
+
+    fc.color = COLORS.EFFECTS;
+    fc.name = label;
+    fc.notes = fillMidi.effects ? transposeNotes(notes.fx, transpose) : [];
   }
 
   // 5. Inject all sections

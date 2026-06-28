@@ -14,13 +14,13 @@
     }
     function injectFoundation() {
       const bpm = parseInt(document.getElementById("bpm-input").value, 10) || BLUEPRINTS[document.getElementById("genre-select").value].bpm;
-      const tracks = {
+      const midi = {
         drums: document.getElementById("checkbox-drums").checked,
         bass: document.getElementById("checkbox-bass").checked,
         melody: document.getElementById("checkbox-melody").checked,
         effects: document.getElementById("checkbox-effects").checked
       };
-      closeWithResult({ action: "inject", genre: document.getElementById("genre-select").value, bpm, tracks });
+      closeWithResult({ action: "inject", genre: document.getElementById("genre-select").value, bpm, midi });
     }
     function cancelDialog() {
       closeWithResult({ action: "cancel" });
@@ -238,11 +238,12 @@
       </div>
       <p class="preview-feel" id="preview-feel">Four-to-the-floor groove</p>
 
+      <p class="layers-label">&gt; FILL MIDI (uncheck = blank clip slots)</p>
       <div class="layers">
-        <label class="layer"><input type="checkbox" id="checkbox-drums" checked /> <span class="layer-dot drums"></span><span class="layer-name">Drums</span></label>
-        <label class="layer"><input type="checkbox" id="checkbox-bass" checked /> <span class="layer-dot bass"></span><span class="layer-name">Bass</span></label>
-        <label class="layer"><input type="checkbox" id="checkbox-melody" checked /> <span class="layer-dot melody"></span><span class="layer-name">Melody</span></label>
-        <label class="layer"><input type="checkbox" id="checkbox-effects" checked /> <span class="layer-dot effects"></span><span class="layer-name">Effects</span></label>
+        <label class="layer"><input type="checkbox" id="checkbox-drums" checked /> <span class="layer-dot drums"></span><span class="layer-name">Drums</span><span class="layer-desc">genre pattern</span></label>
+        <label class="layer"><input type="checkbox" id="checkbox-bass" checked /> <span class="layer-dot bass"></span><span class="layer-name">Bass</span><span class="layer-desc">root line</span></label>
+        <label class="layer"><input type="checkbox" id="checkbox-melody" checked /> <span class="layer-dot melody"></span><span class="layer-name">Melody</span><span class="layer-desc">chords / stabs</span></label>
+        <label class="layer"><input type="checkbox" id="checkbox-effects" checked /> <span class="layer-dot effects"></span><span class="layer-name">Effects</span><span class="layer-desc">atmosphere</span></label>
       </div>
 
       <div class="sections">
