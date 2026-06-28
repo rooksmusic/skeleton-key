@@ -22,7 +22,11 @@ Right-click on any of the following in Live to see **Skeleton Key...** in the co
 - **Arrangement view:** any selected region on a MIDI or audio track
 - **Track headers:** right-click the track name in either view
 
-Click **Skeleton Key...**, pick your genre and BPM, toggle which layers get MIDI (or leave unchecked for blank clip slots), then hit **BUILD THE SKELETON**.
+Click **Skeleton Key...**, pick your genre and BPM, toggle which layers to include, and choose **MIDI** per layer — then hit **BUILD THE SKELETON**.
+
+Each layer has two controls:
+- **Include checkbox** — add this track to the build (unchecked = track not created)
+- **MIDI checkbox** — when included, inject genre patterns (off = blank labeled clip slots)
 
 To close the dialog without building, click the **X** in the top-right corner, hit **Escape**, or click **cancel**.
 
@@ -39,13 +43,13 @@ To close the dialog without building, click the **X** in the top-right corner, h
 | Drop 2  | 256  | 16   |
 | Outro   | 320  | 16   |
 
-**4 tracks per section (always created):**
+**Tracks (per layer toggles):**
 - `Drums` — genre kick/snare pattern (stripped in Intro/Break/Outro)
 - `Bass` — root bass line
 - `Melody` — chord stabs / progressions
 - `Effects` — sustained atmospheric pad
 
-**v1.4 — blank canvas mode:** Uncheck a layer's MIDI toggle to get labeled, color-coded clip slots with no notes — structure only, so you can write your own parts on top.
+Only checked layers are created. Uncheck **MIDI** on a layer to get labeled, color-coded clip slots with no notes.
 
 **8 genres:** House (126 BPM), Dubstep (140), Hip-Hop/Trap (145), Drum & Bass (172), Techno (133), Afrobeats (106), Reggaeton (97), UK Garage (130)
 

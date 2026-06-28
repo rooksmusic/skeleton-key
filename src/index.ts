@@ -57,14 +57,15 @@ export function activate(activation: ActivationContext) {
         const dialogUrl = `data:text/html,${encodeURIComponent(formattedHtml)}`;
 
         // Show the modal dialog and wait for user action
-        const resultStr = await context.ui.showModalDialog(dialogUrl, 390, 580);
+        const resultStr = await context.ui.showModalDialog(dialogUrl, 390, 560);
         if (!resultStr) return;
 
         const result = JSON.parse(resultStr);
         if (result && result.action === "inject" && result.genre) {
           const customBpm = result.bpm ? Number(result.bpm) : undefined;
-          const midiConfig = result.midi || result.tracks || { drums: true, bass: true, melody: true, effects: true };
-          await injectBlueprint(context, result.genre, customBpm, midiConfig);
+          const layerConfig = normalizeLayerConfig(result);
+          if (!LAYER_KEYS.some((layer) => layerConfig.include[layer])) return;
+          await injectBlueprint(context, result.genre, customBpm, layerConfig);
         }
       } catch (err) {
         console.error("[Skeleton Key] Dialog failed:", err);
@@ -90,6 +91,50 @@ export function activate(activation: ActivationContext) {
 // Note names for logging
 const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 
+type LayerKey = "drums" | "bass" | "melody" | "effects";
+
+type LayerConfig = {
+  include: Record<LayerKey, boolean>;
+  midi: Record<LayerKey, boolean>;
+};
+
+const LAYER_KEYS: LayerKey[] = ["drums", "bass", "melody", "effects"];
+
+const DEFAULT_LAYER_CONFIG: LayerConfig = {
+  include: { drums: true, bass: true, melody: true, effects: true },
+  midi: { drums: true, bass: true, melody: true, effects: true },
+};
+
+function normalizeLayerConfig(result: {
+  include?: Partial<Record<LayerKey, boolean>>;
+  midi?: Partial<Record<LayerKey, boolean>>;
+  layers?: LayerConfig;
+  tracks?: Partial<Record<LayerKey, boolean>>;
+}): LayerConfig {
+  if (result.layers?.include && result.layers?.midi) {
+    return {
+      include: { ...DEFAULT_LAYER_CONFIG.include, ...result.layers.include },
+      midi: { ...DEFAULT_LAYER_CONFIG.midi, ...result.layers.midi },
+    };
+  }
+
+  const legacyMidi = result.midi || result.tracks;
+  return {
+    include: legacyMidi
+      ? {
+          drums: legacyMidi.drums !== false,
+          bass: legacyMidi.bass !== false,
+          melody: legacyMidi.melody !== false,
+          effects: legacyMidi.effects !== false,
+        }
+      : { ...DEFAULT_LAYER_CONFIG.include },
+    midi: {
+      ...DEFAULT_LAYER_CONFIG.midi,
+      ...(result.midi || {}),
+    },
+  };
+}
+
 // Transpose a note array by semitones (drums notes at pitch < 40 are kit pieces — skip)
 function transposeNotes(notes: NoteDescription[], semitones: number): NoteDescription[] {
   if (semitones === 0) return notes;
@@ -102,7 +147,12 @@ function transposeNotes(notes: NoteDescription[], semitones: number): NoteDescri
 // Primary DAW timeline injector function
 type MidiConfig = { drums: boolean; bass: boolean; melody: boolean; effects: boolean };
 
-async function injectBlueprint(context: ReturnType<typeof initialize>, genre: string, customBpm?: number, midiConfig?: MidiConfig) {
+async function injectBlueprint(
+  context: ReturnType<typeof initialize>,
+  genre: string,
+  customBpm?: number,
+  layerConfig: LayerConfig = DEFAULT_LAYER_CONFIG,
+) {
   console.log(`[Skeleton Key] Injecting blueprint for genre: ${genre}`);
   const song = context.application.song;
 
@@ -156,22 +206,41 @@ async function injectBlueprint(context: ReturnType<typeof initialize>, genre: st
     }
   }
 
-  // 2. Generate the 4 MIDI Tracks inside a single undoable transaction
-  const tracks = await context.withinTransaction(() =>
-    Promise.all([
-      song.createMidiTrack(),
-      song.createMidiTrack(),
-      song.createMidiTrack(),
-      song.createMidiTrack()
-    ])
-  );
+  // 2. Create only the selected MIDI tracks
+  const include = {
+    drums: layerConfig.include.drums,
+    bass: layerConfig.include.bass,
+    melody: layerConfig.include.melody,
+    effects: layerConfig.include.effects,
+  };
 
-  const [drumsTrack, bassTrack, melodyTrack, fxTrack] = tracks;
+  const tracks = await context.withinTransaction(async () => {
+    const created: {
+      drums?: Awaited<ReturnType<typeof song.createMidiTrack>>;
+      bass?: Awaited<ReturnType<typeof song.createMidiTrack>>;
+      melody?: Awaited<ReturnType<typeof song.createMidiTrack>>;
+      effects?: Awaited<ReturnType<typeof song.createMidiTrack>>;
+    } = {};
 
-  drumsTrack.name  = "Drums";
-  bassTrack.name   = "Bass";
-  melodyTrack.name = "Melody";
-  fxTrack.name     = "Effects";
+    if (include.drums) {
+      created.drums = await song.createMidiTrack();
+      created.drums.name = "Drums";
+    }
+    if (include.bass) {
+      created.bass = await song.createMidiTrack();
+      created.bass.name = "Bass";
+    }
+    if (include.melody) {
+      created.melody = await song.createMidiTrack();
+      created.melody.name = "Melody";
+    }
+    if (include.effects) {
+      created.effects = await song.createMidiTrack();
+      created.effects.name = "Effects";
+    }
+
+    return created;
+  });
 
   // 3. Build all note patterns — full (16 bars), intro/outro (16 bars stripped), break (16 bars minimal)
   type NoteSet = { drums: NoteDescription[], bass: NoteDescription[], melody: NoteDescription[], fx: NoteDescription[] };
@@ -575,35 +644,37 @@ async function injectBlueprint(context: ReturnType<typeof initialize>, genre: st
   const SECTION_LEN = BARS * 4; // 64 beats
 
   const fillMidi = {
-    drums: midiConfig?.drums !== false,
-    bass: midiConfig?.bass !== false,
-    melody: midiConfig?.melody !== false,
-    effects: midiConfig?.effects !== false,
+    drums: layerConfig.midi.drums,
+    bass: layerConfig.midi.bass,
+    melody: layerConfig.midi.melody,
+    effects: layerConfig.midi.effects,
   };
 
   async function makeSection(label: string, startBeat: number, notes: NoteSet) {
-    const [dc, bc, mc, fc] = await Promise.all([
-      drumsTrack.createMidiClip(startBeat, SECTION_LEN),
-      bassTrack.createMidiClip(startBeat, SECTION_LEN),
-      melodyTrack.createMidiClip(startBeat, SECTION_LEN),
-      fxTrack.createMidiClip(startBeat, SECTION_LEN),
-    ]);
-
-    dc.color = COLORS.DRUMS;
-    dc.name = label;
-    dc.notes = fillMidi.drums ? notes.drums : [];
-
-    bc.color = COLORS.BASS;
-    bc.name = label;
-    bc.notes = fillMidi.bass ? transposeNotes(notes.bass, transpose) : [];
-
-    mc.color = COLORS.MELODY;
-    mc.name = label;
-    mc.notes = fillMidi.melody ? transposeNotes(notes.melody, transpose) : [];
-
-    fc.color = COLORS.EFFECTS;
-    fc.name = label;
-    fc.notes = fillMidi.effects ? transposeNotes(notes.fx, transpose) : [];
+    if (tracks.drums) {
+      const dc = await tracks.drums.createMidiClip(startBeat, SECTION_LEN);
+      dc.color = COLORS.DRUMS;
+      dc.name = label;
+      dc.notes = fillMidi.drums ? notes.drums : [];
+    }
+    if (tracks.bass) {
+      const bc = await tracks.bass.createMidiClip(startBeat, SECTION_LEN);
+      bc.color = COLORS.BASS;
+      bc.name = label;
+      bc.notes = fillMidi.bass ? transposeNotes(notes.bass, transpose) : [];
+    }
+    if (tracks.melody) {
+      const mc = await tracks.melody.createMidiClip(startBeat, SECTION_LEN);
+      mc.color = COLORS.MELODY;
+      mc.name = label;
+      mc.notes = fillMidi.melody ? transposeNotes(notes.melody, transpose) : [];
+    }
+    if (tracks.effects) {
+      const fc = await tracks.effects.createMidiClip(startBeat, SECTION_LEN);
+      fc.color = COLORS.EFFECTS;
+      fc.name = label;
+      fc.notes = fillMidi.effects ? transposeNotes(notes.fx, transpose) : [];
+    }
   }
 
   // 5. Inject all sections
