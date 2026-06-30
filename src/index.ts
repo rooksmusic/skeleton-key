@@ -48,10 +48,9 @@ export function activate(activation: ActivationContext) {
       console.log("Skeleton Key: command triggered, opening dialog");
       try {
         // Inline CSS into the HTML template
-        const formattedHtml = htmlTemplate.replace(
-          "</head>",
-          `<style>${cssStyles}</style></head>`
-        );
+        const formattedHtml = htmlTemplate
+          .replace(/<link rel="stylesheet"[^>]*>\s*/g, "")
+          .replace("</head>", `<style>${cssStyles}</style></head>`);
 
         // Encode HTML as a data URL
         const dialogUrl = `data:text/html,${encodeURIComponent(formattedHtml)}`;

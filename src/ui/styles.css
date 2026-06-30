@@ -19,12 +19,19 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   background: var(--bg-main);
   color: var(--text-hi);
   font-family: 'Courier New', Courier, monospace;
   font-size: 13px;
-  height: 100%;
+  width: 100%;
+  height: 100vh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -45,8 +52,7 @@ body {
   gap: 6px;
   box-sizing: border-box;
   box-shadow: inset 0 1px 0 rgba(0,255,65,0.06);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* subtle corner-tick CRT feel */

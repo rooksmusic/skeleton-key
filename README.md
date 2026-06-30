@@ -8,7 +8,7 @@ One click injects a full arrangement skeleton into your Live session: 6 labeled 
 
 ## Install
 
-1. Download `Skeleton-Key-1.4.0.ablx` from [Releases](../../releases)
+1. Download `Skeleton-Key-1.4.1.ablx` from [Releases](../../releases)
 2. Double-click the `.ablx` file — Live installs it automatically
 3. Fully quit and relaunch Live
 
