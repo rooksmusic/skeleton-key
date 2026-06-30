@@ -2,6 +2,6 @@
   "name": "Skeleton Key",
   "author": "Rooks Music",
   "entry": "index.js",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "minimumApiVersion": "1.0.0"
 }

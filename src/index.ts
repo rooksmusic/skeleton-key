@@ -22,20 +22,27 @@ const COLORS = {
   EFFECTS: 11030783  // 0xA85FFF (vivid purple)
 };
 
-// Valid SDK context menu scopes (from official docs)
+// Context menu scopes — avoid overlapping scopes that duplicate menu entries
+// (e.g. ClipSlot + MidiClip both fire on a filled session clip).
 const VALID_SCOPES = [
-  "MidiClip",
-  "AudioClip",
+  "ClipSlot",
+  "ClipSlotSelection",
   "MidiTrack",
   "AudioTrack",
-  "ClipSlot",
   "Scene",
   "MidiTrack.ArrangementSelection",
   "AudioTrack.ArrangementSelection",
-  "ClipSlotSelection",
 ] as const;
 
+let isActivated = false;
+
 export function activate(activation: ActivationContext) {
+  if (isActivated) {
+    console.warn("Skeleton Key: activate() already ran — skipping duplicate registration");
+    return;
+  }
+  isActivated = true;
+
   console.log("Skeleton Key: activate() called");
 
   const context = initialize(activation, "1.0.0");
