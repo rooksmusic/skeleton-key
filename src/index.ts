@@ -63,7 +63,7 @@ export function activate(activation: ActivationContext) {
         const dialogUrl = `data:text/html,${encodeURIComponent(formattedHtml)}`;
 
         // Show the modal dialog and wait for user action
-        const resultStr = await context.ui.showModalDialog(dialogUrl, 390, 560);
+        const resultStr = await context.ui.showModalDialog(dialogUrl, 390, 580);
         if (!resultStr) return;
 
         const result = JSON.parse(resultStr);

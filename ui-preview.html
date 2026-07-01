@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Skeleton Key 1.4 — UI Preview</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: #0a0a0a;
+      font-family: system-ui, sans-serif;
+      color: #666;
+    }
+    h1 { font-size: 13px; font-weight: 500; color: #aaa; margin: 0; }
+    iframe {
+      width: 390px;
+      height: 580px;
+      border: 1px solid #1a3a1a;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+  <h1>Skeleton Key 1.4 — dialog preview (390×580)</h1>
+  <iframe id="preview" title="Skeleton Key UI"></iframe>
+  <script>
+    Promise.all([
+      fetch("src/ui/index.html").then(r => r.text()),
+      fetch("src/ui/styles.css").then(r => r.text()),
+    ]).then(([html, css]) => {
+      document.getElementById("preview").srcdoc = html.replace(
+        "</head>",
+        `<style>${css}</style></head>`
+      );
+    });
+  </script>
+</body>
+</html>
