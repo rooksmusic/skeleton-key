@@ -8,7 +8,7 @@ One click injects a full arrangement skeleton into your Live session: 6 labeled 
 
 ## Install
 
-1. Download `Skeleton-Key-1.4.4.ablx` from [Releases](../../releases)
+1. Download `Skeleton-Key-1.4.5.ablx` from [Releases](../../releases)
 2. Double-click the `.ablx` file — Live installs it automatically
 3. Fully quit and relaunch Live
 
@@ -18,10 +18,14 @@ One click injects a full arrangement skeleton into your Live session: 6 labeled 
 
 Right-click on any of the following in Live to see **Skeleton Key...** in the context menu:
 
-- **Session view:** clip slot (empty or filled), scene row, or track **title/name**
-- **Arrangement view:** time selection on a MIDI/audio track, or track **title/name**
+- **Session view:** clip slot (select slot first if empty), scene row, or track **title/name**
+- **Session clip view:** inside the open clip editor (MIDI/audio clip body)
+- **Arrangement view:** clip body, time selection on a track, or track **title/name**
+- **Devices/samples:** Drum Rack, Simpler, or browser **Sample**
 
-> **Track header:** right-click the track **name** on the left — not the clip, mixer, or device area.
+> **Track header:** right-click the track **name** on the left — not the mixer or device chain.
+>
+> **Empty session slot:** click the slot once to select it, then right-click.
 
 If you see **Skeleton Key...** twice, remove duplicate installs: Live → **Settings → Extensions** — keep only one Skeleton Key entry (latest version), quit & relaunch Live.
 

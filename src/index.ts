@@ -22,16 +22,24 @@ const COLORS = {
   EFFECTS: 11030783  // 0xA85FFF (vivid purple)
 };
 
-// Context menu scopes — avoid overlapping scopes that duplicate menu entries
-// (e.g. ClipSlot + MidiClip both fire on a filled session clip).
-const VALID_SCOPES = [
-  "ClipSlot",
+// Context menu scopes — register every SDK scope, but never overlapping pairs on the
+// same right-click target (Live stacks matching scopes as separate menu rows):
+//   ClipSlot + ClipSlotSelection  → session slot / clip view
+//   ClipSlot + MidiClip|AudioClip → filled session clip
+// Use ClipSlotSelection for session slots (incl. multi-select) and clip scopes for
+// clip bodies (session clip view, arrangement clips). Omit ClipSlot entirely.
+const CONTEXT_MENU_SCOPES = [
   "ClipSlotSelection",
+  "MidiClip",
+  "AudioClip",
   "MidiTrack",
   "AudioTrack",
   "Scene",
   "MidiTrack.ArrangementSelection",
   "AudioTrack.ArrangementSelection",
+  "DrumRack",
+  "Sample",
+  "Simpler",
 ] as const;
 
 let isActivated = false;
@@ -82,7 +90,7 @@ export function activate(activation: ActivationContext) {
   // Register context menu action on all valid object scopes.
   // Must be called synchronously during activate — the SDK host does not await
   // the activate return value, so async/await here causes registrations to be lost.
-  for (const scope of VALID_SCOPES) {
+  for (const scope of CONTEXT_MENU_SCOPES) {
     context.ui.registerContextMenuAction(
       scope,
       "Skeleton Key...",
