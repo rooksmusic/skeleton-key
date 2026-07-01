@@ -1,6 +1,6 @@
 {
   "name": "skeleton-key",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "main": "dist/index.js",
   "engines": {
     "node": ">=24.14.1"
